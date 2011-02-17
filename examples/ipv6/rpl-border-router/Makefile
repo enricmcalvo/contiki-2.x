@@ -9,6 +9,13 @@ APPS += webserver
 
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 PROJECT_SOURCEFILES += slip-bridge.c httpd-simple.c
+ifeq ($(TARGET),)
+  -include Makefile.target
+  ifeq ($(TARGET),z1)
+    PROJECT_SOURCEFILES += i2cmaster.c adxl345.c
+  endif
+endif
+
 
 include $(CONTIKI)/Makefile.include
 
