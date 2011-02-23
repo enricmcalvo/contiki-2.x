@@ -106,8 +106,6 @@ static uint8_t is_gateway;
 #define PRINTF(...)
 #endif
 
-void init_platform(void);
-
 /*---------------------------------------------------------------------------*/
 #if 0
 int
@@ -253,9 +251,9 @@ main(int argc, char **argv)
   process_init();
   process_start(&etimer_process, NULL);
 
-  ctimer_init();
+  process_start(&sensors_process, NULL);
 
-  init_platform(); //Enric_Z1SP process_start(&sensors_process, NULL);
+  ctimer_init();
 
   set_rime_addr();
 
