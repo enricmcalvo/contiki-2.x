@@ -2,7 +2,7 @@
 *.swp
 *.ihex
 obj_*
-*.z1
+*.z1*
 *.sky
 *.map
 *.a
@@ -10,3 +10,4 @@ obj_*
 *.pyc
 symbols.c
 symbols.h
+*tools/sky/*
