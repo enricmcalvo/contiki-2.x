@@ -47,9 +47,4 @@
 #define BUZZER_PxREN   P4REN
 #define BUZZER_PIN     3      
 
-
-extern const struct sensors_sensor potentiometer_sensor;
-
-#define POTENTIOMETER_SENSOR "Potentiometer"
-
-#endif /* __POTENTIOMETER_SENSOR_H__ */
+#endif /* __BUZZER_H__ */

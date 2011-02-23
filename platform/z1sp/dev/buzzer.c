@@ -38,24 +38,3 @@
 #include <io.h>
 
 
-const struct sensors_sensor battery_sensor;
-/*---------------------------------------------------------------------------*/
-static int
-value(int type)
-{
-  return POTENTIOMETER_MEM;
-}
-/*---------------------------------------------------------------------------*/
-static int
-configure(int type, int c)
-{
-  return sky_sensors_configure(INPUT_CHANNEL, INPUT_REFERENCE, type, c);
-}
-/*---------------------------------------------------------------------------*/
-static int
-status(int type)
-{
-  return sky_sensors_status(INPUT_CHANNEL, type);
-}
-/*---------------------------------------------------------------------------*/
-SENSORS_SENSOR(potentiometer_sensor, POTENTIOMETER_SENSOR, value, configure, status);
