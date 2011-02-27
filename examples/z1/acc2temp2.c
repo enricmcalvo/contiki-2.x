@@ -36,7 +36,7 @@
  *         Zolertia Z1. Enables interrupts and registers callbacks for them. Then
  *         starts a constantly running readout of acceleration data.
  *         Modified to get a temperature reading from tmp102 when double-tapped
- *         (simple mod)
+ *         (thread-based  mod)
  * \author
  *         Marcus Lundén, SICS <mlunden@sics.se>
  *         Enric M. Calvo, Zolertia <ecalvo@zolertia.com>
@@ -52,10 +52,12 @@
 #define ACCM_READ_INTERVAL    CLOCK_SECOND
 
 static process_event_t ledOff_event;
+static process_event_t readtemp_event;
 /*---------------------------------------------------------------------------*/
 PROCESS(accel_process, "Test Accel process");
 PROCESS(led_process, "LED handling process");
-AUTOSTART_PROCESSES(&accel_process, &led_process);
+PROCESS(tmp_process, "TMP102 handling process");
+AUTOSTART_PROCESSES(&accel_process, &led_process, &tmp_process);
 /*---------------------------------------------------------------------------*/
 /* As several interrupts can be mapped to one interrupt pin, when interrupt 
     strikes, the adxl345 interrupt source register is read. This function prints
@@ -143,13 +145,29 @@ accm_tap_cb(u8_t reg){
   if(reg & ADXL345_INT_DOUBLETAP){
     L_ON(LEDS_G);
     printf("~~[%u] DoubleTap detected! (0x%02X) -- ", ((u16_t) clock_time())/128, reg);
-    print_temp();
+    process_post(&tmp_process, readtemp_event, NULL);
   } else {
     L_ON(LEDS_R);
     printf("~~[%u] Tap detected! (0x%02X) -- ", ((u16_t) clock_time())/128, reg);
   }
   print_int(reg);
 }
+/*---------------------------------------------------------------------------*/
+/* When posted an readtemp event, the tmp102 sensor will be read
+      static process_event_t ledOff_event;
+      ledOff_event = process_alloc_event();
+      process_post(&led_process, ledOff_event, NULL);
+*/
+
+PROCESS_THREAD(tmp_process, ev, data) {
+  PROCESS_BEGIN();
+  while(1){
+    PROCESS_WAIT_EVENT_UNTIL(ev == readtemp_event);
+    print_temp();
+  }
+  PROCESS_END();
+}
+
 /*---------------------------------------------------------------------------*/
 /* When posted an ledOff event, the LEDs will switch off after LED_INT_ONTIME.
       static process_event_t ledOff_event;
