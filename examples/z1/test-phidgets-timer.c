@@ -32,7 +32,7 @@
 
 /**
  * \file
- *         An example of how to use the phidgets on the Z1 platform.
+ *         An example of how to use the phidgets with timers on the Z1 platform.
  * \author
  *         Joakim Eriksson <joakime@sics.se>
  *         Enric M. Calvo <ecalvo@zolertia.com>
@@ -50,11 +50,14 @@ AUTOSTART_PROCESSES(&test_phidgets_process);
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(test_phidgets_process, ev, data)
 {
+  static struct etimer et;
   PROCESS_BEGIN();
   SENSORS_ACTIVATE(phidgets);
 
   while(1) {
+    etimer_set(&et, CLOCK_SECOND/2);
 
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
     leds_toggle(LEDS_GREEN);
     printf("Phidget 5V 1:%d\n", phidgets.value(PHIDGET5V_1));
     printf("Phidget 5V 2:%d\n", phidgets.value(PHIDGET5V_2));

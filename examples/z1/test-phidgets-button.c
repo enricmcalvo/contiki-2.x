@@ -28,34 +28,41 @@
  *
  * This file is part of the Contiki operating system.
  *
+ * $Id: test-phidgets.c,v 1.1 2010/08/27 12:51:41 joxe Exp $
  */
 
 /**
  * \file
- *         An example of how to use the phidgets on the Z1 platform.
+ *         An example of how to use the button and the phidgets on the Z1 platform.
  * \author
  *         Joakim Eriksson <joakime@sics.se>
- *         Enric M. Calvo <ecalvo@zolertia.com>
+ *         Enric M. Calvo  <ecalvo@zolertia.com>
  */
 
 #include <stdio.h>
 #include "contiki.h"
-#include "dev/leds.h"
 #include "lib/sensors.h"
+#include "dev/leds.h"
 #include "dev/z1-phidgets.h"
+#include "dev/button-sensor.h"
 
 /*---------------------------------------------------------------------------*/
-PROCESS(test_phidgets_process, "Test Phidgets");
-AUTOSTART_PROCESSES(&test_phidgets_process);
+PROCESS(test_button_process, "Test Button & Phidgets");
+AUTOSTART_PROCESSES(&test_button_process);
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(test_phidgets_process, ev, data)
+PROCESS_THREAD(test_button_process, ev, data)
 {
   PROCESS_BEGIN();
   SENSORS_ACTIVATE(phidgets);
+  SENSORS_ACTIVATE(button_sensor);
 
   while(1) {
+    printf("Please press the User Button\n");
+    PROCESS_WAIT_EVENT_UNTIL(ev == sensors_event &&
+                             data == &button_sensor);
 
     leds_toggle(LEDS_GREEN);
+    printf("Button clicked\n");
     printf("Phidget 5V 1:%d\n", phidgets.value(PHIDGET5V_1));
     printf("Phidget 5V 2:%d\n", phidgets.value(PHIDGET5V_2));
     printf("Phidget 3V 1:%d\n", phidgets.value(PHIDGET3V_1));
