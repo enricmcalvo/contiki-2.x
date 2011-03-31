@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Swedish Institute of Computer Science.
+ * Copyright (c) 2010, University of Colombo School of Computing
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,69 +28,66 @@
  *
  * This file is part of the Contiki operating system.
  *
- * $Id: example-unicast.c,v 1.5 2010/02/02 16:36:46 adamdunkels Exp $
+ * @(#)$$
  */
 
 /**
  * \file
- *         Best-effort single-hop unicast example
+ *         Machine dependent AVR SLIP routines for UART0.
  * \author
- *         Adam Dunkels <adam@sics.se>
+ *         Kasun Hewage <kasun.ch@gmail.com>
  */
 
-#include "contiki.h"
-#include "net/rime.h"
-
-#include "dev/button-sensor.h"
-
-#include "dev/leds.h"
-
 #include <stdio.h>
+#include "contiki.h"
+#include "dev/rs232.h"
+#include "slip.h"
 
 /*---------------------------------------------------------------------------*/
-PROCESS(example_unicast_process, "Example unicast");
-AUTOSTART_PROCESSES(&example_unicast_process);
-/*---------------------------------------------------------------------------*/
-static void
-recv_uc(struct unicast_conn *c, const rimeaddr_t *from)
+static int
+slip_putchar(char c, FILE *stream)
 {
-  char mypkt[16];
-  printf("unicast message received from %d.%d\n",
-	 from->u8[0], from->u8[1]);
-  memcpy(mypkt, packetbuf_dataptr(),sizeof(mypkt));
-  printf("Data =  %s\n", mypkt);
-  leds_toggle(LEDS_GREEN); 
-}
-static const struct unicast_callbacks unicast_callbacks = {recv_uc};
-static struct unicast_conn uc;
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(example_unicast_process, ev, data)
-{
-  PROCESS_EXITHANDLER(unicast_close(&uc);)
-    
-  PROCESS_BEGIN();
-  cc2420_set_txpower(5);
+#define SLIP_END 0300
+  static char debug_frame = 0;
 
-  unicast_open(&uc, 222, &unicast_callbacks);
-
-  while(1) {
-    static struct etimer et;
-    rimeaddr_t addr;
-    
-    etimer_set(&et, CLOCK_SECOND);
-    
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
-
-    packetbuf_copyfrom("Enric2", 6);
-    addr.u8[0] = 225;
-    addr.u8[1] = 1;
-    if(!rimeaddr_cmp(&addr, &rimeaddr_node_addr)) {
-      unicast_send(&uc, &addr);
-      leds_toggle(LEDS_RED); 
-    }
-
+  if (!debug_frame) {        /* Start of debug output */
+    slip_arch_writeb(SLIP_END);
+    slip_arch_writeb('\r'); /* Type debug line == '\r' */
+    debug_frame = 1;
   }
 
-  PROCESS_END();
+  slip_arch_writeb((unsigned char)c);
+          
+  /*
+   * Line buffered output, a newline marks the end of debug output and
+   * implicitly flushes debug output.         
+   */
+  if (c == '\n') {
+    slip_arch_writeb(SLIP_END);
+    debug_frame = 0;
+  }
+
+  return c;
 }
 /*---------------------------------------------------------------------------*/
+static FILE slip_stdout = FDEV_SETUP_STREAM(slip_putchar, NULL,
+                                            _FDEV_SETUP_WRITE);
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_init(unsigned long ubr)
+{
+  rs232_set_input(RS232_PORT_0, slip_input_byte);
+  stdout = &slip_stdout;
+}
+/*---------------------------------------------------------------------------*/
+/*
+ XXX:
+      Currently, the following function is in cpu/avr/dev/rs232.c file. this
+      should be moved to here from there hence this is a platform specific slip 
+      related function. 
+void
+slip_arch_writeb(unsigned char c)
+{
+  rs232_send(RS232_PORT_0, c);
+}
+*/

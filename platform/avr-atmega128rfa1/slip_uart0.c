@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Swedish Institute of Computer Science.
+ * Copyright (c) 2010, University of Colombo School of Computing
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,64 +28,66 @@
  *
  * This file is part of the Contiki operating system.
  *
- * $Id: example-broadcast.c,v 1.3 2010/11/06 15:03:48 adamdunkels Exp $
+ * @(#)$$
  */
 
 /**
  * \file
- *         Testing the broadcast layer in Rime
+ *         Machine dependent AVR SLIP routines for UART0.
  * \author
- *         Adam Dunkels <adam@sics.se>
+ *         Kasun Hewage <kasun.ch@gmail.com>
  */
 
-#include "contiki.h"
-#include "net/rime.h"
-#include "random.h"
-
-#include "dev/button-sensor.h"
-
-#include "dev/leds.h"
-
 #include <stdio.h>
+#include "contiki.h"
+#include "dev/rs232.h"
+#include "slip.h"
+
 /*---------------------------------------------------------------------------*/
-PROCESS(example_broadcast_process, "Broadcast example");
-AUTOSTART_PROCESSES(&example_broadcast_process);
-/*---------------------------------------------------------------------------*/
-static void
-broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
+static int
+slip_putchar(char c, FILE *stream)
 {
-  printf("broadcast message received from %d.%d: '%s'\n",
-         from->u8[0], from->u8[1], (char *)packetbuf_dataptr());
-}
-static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
-static struct broadcast_conn broadcast;
-/*---------------------------------------------------------------------------*/
-PROCESS_THREAD(example_broadcast_process, ev, data)
-{
-  static struct etimer et;
+#define SLIP_END 0300
+  static char debug_frame = 0;
 
-  PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
-
-  PROCESS_BEGIN();
-
-  SENSORS_ACTIVATE(button_sensor);
-  broadcast_open(&broadcast, 129, &broadcast_call);
-
-  while(1) {
-
-    /* Delay 2-4 seconds */
-    //etimer_set(&et, CLOCK_SECOND * 4 + random_rand() % (CLOCK_SECOND * 4));
-    etimer_set(&et, CLOCK_SECOND);
-
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et) || (ev == sensors_event &&
-                             data == &button_sensor));
-
-    packetbuf_copyfrom("Hello", 6);
-    broadcast_send(&broadcast);
-    printf("broadcast message sent\n");
+  if (!debug_frame) {        /* Start of debug output */
+    slip_arch_writeb(SLIP_END);
+    slip_arch_writeb('\r'); /* Type debug line == '\r' */
+    debug_frame = 1;
   }
 
-  PROCESS_END();
+  slip_arch_writeb((unsigned char)c);
+          
+  /*
+   * Line buffered output, a newline marks the end of debug output and
+   * implicitly flushes debug output.         
+   */
+  if (c == '\n') {
+    slip_arch_writeb(SLIP_END);
+    debug_frame = 0;
+  }
+
+  return c;
 }
 /*---------------------------------------------------------------------------*/
-
+static FILE slip_stdout = FDEV_SETUP_STREAM(slip_putchar, NULL,
+                                            _FDEV_SETUP_WRITE);
+/*---------------------------------------------------------------------------*/
+void
+slip_arch_init(unsigned long ubr)
+{
+  rs232_set_input(RS232_PORT_0, slip_input_byte);
+  stdout = &slip_stdout;
+}
+/*---------------------------------------------------------------------------*/
+/*
+ XXX:
+      Currently, the following function is in cpu/avr/dev/rs232.c file. this
+      should be moved to here from there hence this is a platform specific slip 
+      related function. 
+void
+slip_arch_writeb(unsigned char c)
+{
+  rs232_send(RS232_PORT_0, c);
+}
+*/
