@@ -197,6 +197,7 @@
 #include "project-conf.h"
 #endif /* PROJECT_CONF_H */
 
+#define I2C_CONF_RX_WITH_INTERRUPT 0
 
 
 #endif /* CONTIKI_CONF_H */

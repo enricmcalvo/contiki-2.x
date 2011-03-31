@@ -142,15 +142,19 @@ i2c_receive_n(u8_t byte_ctr, u8_t *rx_buf) {
 
   UCB1CTL1 |= UCTXSTT;		// I2C start condition
 
-  while (rx_byte_ctr > 0){
+  while (rx_byte_ctr > 0){      // Read in loop 
     if (UC1IFG & UCB1RXIFG) {   // Waiting for Data
       rx_buf[rx_byte_tot - rx_byte_ctr] = UCB1RXBUF;
+      PRINTFDEBUG("In received loop: %d \n", rx_byte_tot - rx_byte_ctr);
       rx_byte_ctr--;
       UC1IFG &= ~UCB1RXIFG;     // Clear USCI_B1 RX int flag      
       n_received++;
+      if (rx_byte_ctr == 1)     // Send STOP bit before last byte is received! 
+        UCB1CTL1 |= UCTXSTP;
     }
   }
-  UCB1CTL1 |= UCTXSTP;		// I2C stop condition
+  //UCB1CTL1 |= UCTXSTP;		// I2C stop condition sent before last byte is received
+
   return n_received;
 #endif
 }
