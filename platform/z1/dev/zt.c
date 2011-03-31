@@ -43,7 +43,7 @@
 #include <signal.h>
 #include "contiki.h"
 #include "i2cmaster.h"
-#include "tmp102.h"
+#include "zt.h"
 
 
 
@@ -156,7 +156,7 @@ tmp102_read_spl_raw32 (void)
 {
   u16_t rd = 0;
 
-  rd = tmp102_read_reg32 (TMP102_SPL);
+  rd = tmp102_read_reg32 (ZT_SPL);
 
   return rd;
 }

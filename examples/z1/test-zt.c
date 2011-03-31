@@ -85,7 +85,7 @@ PROCESS_THREAD(temp_process, ev, data)
     sign = 1;
 
     PRINTFDEBUG("Reading Temp...\n");
-    raw32 = tmp102_read_temp_raw32();
+    raw32 = tmp102_read_spl_raw32();
     /*absraw = raw;
     if(raw < 0) {		// Perform 2C's if sensor returned negative data
       absraw = (raw ^ 0xFFFF) + 1;

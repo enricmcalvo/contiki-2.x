@@ -61,11 +61,13 @@ void    tmp102_write_reg(u8_t reg, u16_t val);
     returns the value of the read register
 */
 u16_t tmp102_read_reg(u8_t reg);
+u32_t tmp102_read_reg32(u8_t reg);
 
 /* Read temperature in raw format
     no args needed
 */
 u16_t tmp102_read_temp_raw();
+u32_t tmp102_read_temp_raw32();
 
 /* Read only integer part of the temperature in 1deg. precision.
     no args needed
