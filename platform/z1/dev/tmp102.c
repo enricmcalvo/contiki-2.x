@@ -127,6 +127,7 @@ tmp102_read_reg (u8_t reg)
   u8_t buf[] = { 0x00, 0x00 };
   u16_t retVal = 0;
   u8_t rtx = reg;
+  u8_t debug_n_recvd = 0;
   PRINTFDEBUG ("READ_REG 0x%02X\n", reg);
 
   // transmit the register to read 
@@ -138,7 +139,8 @@ tmp102_read_reg (u8_t reg)
   // receive the data 
   i2c_receiveinit (TMP102_ADDR);
   while (i2c_busy ());
-  i2c_receive_n (2, &buf[0]);
+  debug_n_recvd = i2c_receive_n (2, &buf[0]);
+  PRINTFDEBUG ("I2C Received %d\n", debug_n_recvd);
   while (i2c_busy ());
 
   retVal = (u16_t) (buf[0] << 8 | (buf[1]));
