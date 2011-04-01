@@ -78,11 +78,12 @@ tmp102_init (void)
       PRINTFDEBUG ("TMP102 init\n");
       _TMP102_STATUS |= INITED;
       /* Power Up TMP102 via pin */
-      TMP102_PWR_DIR |= TMP102_PWR_PIN;
+      /*TMP102_PWR_DIR |= TMP102_PWR_PIN;
       TMP102_PWR_SEL &= ~TMP102_PWR_SEL;
       TMP102_PWR_SEL2 &= ~TMP102_PWR_SEL;
       TMP102_PWR_REN &= ~TMP102_PWR_SEL;
       TMP102_PWR_OUT |= TMP102_PWR_PIN;
+*/
 
       /* Set up ports and pins for I2C communication */
       i2c_enable ();

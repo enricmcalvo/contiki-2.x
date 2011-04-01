@@ -94,6 +94,12 @@ PROCESS_THREAD(temp_process, ev, data)
     tempfrac = ((absraw >> 4) % 16) * 625;	// Info in 1/10000 of degree
     minus = ((tempint == 0) & (sign == -1)) ? '-' : ' ';
     PRINTF("Temp = %c%d.%04d\n", minus, tempint, tempfrac);
+    PRINTF("Raw = %04x\n", raw);
+    tmp102_write_reg (0xB0, 0xC0FE);
+    clock_wait(100);
+    raw = tmp102_read_temp_raw();
+    PRINTF("Raw = %04x\n", raw);
+
   }
   PROCESS_END();
 }
