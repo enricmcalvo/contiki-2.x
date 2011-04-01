@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2011, Zolertia(TM) is a Trademark by Advancare,SL
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,9 @@
 
 /**
  * \file
- *         Device drivers for tmp102 temperature sensor in Zolertia Z1.
+ *         Device drivers for ZoundTracker in Zolertia Z1.
  * \author
  *         Enric M. Calvo, Zolertia <ecalvo@zolertia.com>
- *         Marcus Lundén, SICS <mlunden@sics.se>
  */
 
 
@@ -43,12 +42,12 @@
 #include <signal.h>
 #include "contiki.h"
 #include "i2cmaster.h"
-#include "tmp102.h"
+#include "zt.h"
 
 
 
-/* Bitmasks and bit flag variable for keeping track of tmp102 status. */
-enum TMP102_STATUSTYPES
+/* Bitmasks and bit flag variable for keeping track of zt status. */
+enum ZT_STATUSTYPES
 {
   /* must be a bit and not more, not using 0x00. */
   INITED = 0x01,
@@ -60,29 +59,26 @@ enum TMP102_STATUSTYPES
   CCC = 0x40,			// available to extend this...
   DDD = 0x80 			// available to extend this...
 };
-static enum TMP102_STATUSTYPES _TMP102_STATUS = 0x00;
+static enum ZT_STATUSTYPES _ZT_STATUS = 0x00;
 
-
-/*---------------------------------------------------------------------------*/
-//PROCESS(tmp102_process, "Temperature Sensor process");
 
 /*---------------------------------------------------------------------------*/
 /* Init the temperature sensor: ports, pins, registers, interrupts (none enabled), I2C,
     default threshold values etc. */
 
 void
-tmp102_init (void)
+zt_init (void)
 {
-  if (!(_TMP102_STATUS & INITED))
+  if (!(_ZT_STATUS & INITED))
     {
-      PRINTFDEBUG ("TMP102 init\n");
-      _TMP102_STATUS |= INITED;
-      /* Power Up TMP102 via pin */
-      TMP102_PWR_DIR |= TMP102_PWR_PIN;
-      TMP102_PWR_SEL &= ~TMP102_PWR_SEL;
-      TMP102_PWR_SEL2 &= ~TMP102_PWR_SEL;
-      TMP102_PWR_REN &= ~TMP102_PWR_SEL;
-      TMP102_PWR_OUT |= TMP102_PWR_PIN;
+      PRINTFDEBUG ("ZT init\n");
+      _ZT_STATUS |= INITED;
+      /* ZoundTracker is a Ziglet, hence always powered 
+      ZT_PWR_DIR |= ZT_PWR_PIN;
+      ZT_PWR_SEL &= ~ZT_PWR_SEL;
+      ZT_PWR_SEL2 &= ~ZT_PWR_SEL;
+      ZT_PWR_REN &= ~ZT_PWR_SEL;
+      ZT_PWR_OUT |= ZT_PWR_PIN; */
 
       /* Set up ports and pins for I2C communication */
       i2c_enable ();
@@ -98,14 +94,14 @@ tmp102_init (void)
 */
 
 void
-tmp102_write_reg (u8_t reg, u16_t val)
+zt_write_reg (u8_t reg, u16_t val)
 {
   u8_t tx_buf[] = { reg, 0x00, 0x00 };
 
   tx_buf[1] = (u8_t) (val >> 8);
   tx_buf[2] = (u8_t) (val & 0x00FF);
 
-  i2c_transmitinit (TMP102_ADDR);
+  i2c_transmitinit (ZT_ADDR);
   while (i2c_busy ());
   PRINTFDEBUG ("I2C Ready to TX\n");
 
@@ -120,9 +116,57 @@ tmp102_write_reg (u8_t reg, u16_t val)
       reg       what register to read
     returns the value of the read register type u16_t
 */
+/*
+u32_t
+zt_read_reg (u8_t reg)
+{
+  u8_t buf[] = { 0x00, 0x00, 0x00, 0x00 };
+  u32_t retVal = 0;
+  u8_t rtx = reg;
+  PRINTFDEBUG ("READ_REG 0x%02X\n", reg);
+
+  // transmit the register to read 
+  i2c_transmitinit (ZT_ADDR);
+  while (i2c_busy ());
+  i2c_transmit_n (1, &rtx);
+  while (i2c_busy ());
+
+  // receive the data 
+  i2c_receiveinit (ZT_ADDR);
+  while (i2c_busy ());
+  i2c_receive_n (4, &buf[0]);
+  while (i2c_busy ());
+
+  retVal = (u16_t) (buf[0] << 8 | (buf[1]));
+
+  return retVal;
+}
+*/
+/*---------------------------------------------------------------------------*/
+/* Read SPL in a raw format in 32 bit. Further processing will be needed
+   to make an interpretation of these 12 or 13-bit data, depending on configuration
+*/
+/*
+u32_t
+zt_read_spl_raw (void)
+{
+  u16_t rd = 0;
+
+  rd = zt_read_reg32 (ZT_SPL);
+
+  return rd;
+}
+*/
+
+/*---------------------------------------------------------------------------*/
+/* Read register.
+    args:
+      reg       what register to read
+    returns the value of the read register type u16_t
+*/
 
 u16_t
-tmp102_read_reg (u8_t reg)
+zt_read_reg (u8_t reg)
 {
   u8_t buf[] = { 0x00, 0x00 };
   u16_t retVal = 0;
@@ -130,13 +174,13 @@ tmp102_read_reg (u8_t reg)
   PRINTFDEBUG ("READ_REG 0x%02X\n", reg);
 
   // transmit the register to read 
-  i2c_transmitinit (TMP102_ADDR);
+  i2c_transmitinit (ZT_ADDR);
   while (i2c_busy ());
   i2c_transmit_n (1, &rtx);
   while (i2c_busy ());
 
   // receive the data 
-  i2c_receiveinit (TMP102_ADDR);
+  i2c_receiveinit (ZT_ADDR);
   while (i2c_busy ());
   i2c_receive_n (2, &buf[0]);
   while (i2c_busy ());
@@ -152,11 +196,11 @@ tmp102_read_reg (u8_t reg)
 */
 
 u16_t
-tmp102_read_temp_raw (void)
+zt_read_spl_raw (void)
 {
   u16_t rd = 0;
 
-  rd = tmp102_read_reg (TMP102_TEMP);
+  rd = zt_read_reg (ZT_SPL);
 
   return rd;
 }
@@ -167,14 +211,14 @@ tmp102_read_temp_raw (void)
 */
 
 int8_t
-tmp102_read_temp_simple (void)
+zt_read_spl_simple (void)
 {
   int16_t raw = 0;
   int8_t rd = 0;
   int16_t sign = 1;
   int16_t abstemp, temp_int;
 
-  raw = (int16_t) tmp102_read_reg (TMP102_TEMP);
+  raw = (int16_t) zt_read_reg (ZT_SPL);
   if (raw < 0)
     {
       abstemp = (raw ^ 0xFFFF) + 1;
@@ -184,7 +228,7 @@ tmp102_read_temp_simple (void)
   /* Integer part of the temperature value */
   temp_int = (abstemp >> 8) * sign;
 
-  /* See test-tmp102.c on how to print values of temperature with decimals 
+  /* See test-zt.c on how to print values of temperature with decimals 
      fractional part in 1/10000 of degree 
      temp_frac = ((abstemp >>4) % 16) * 625; 
      Data could be multiplied by 63 to have less bit-growth and 1/1000 precision 
